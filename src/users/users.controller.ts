@@ -1,16 +1,14 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './model/user.dto';
+import { AccessTokenGuard } from '../common/guards/accessToken.guard';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post('/signup')
-  async createUser(@Body() dto: CreateUserDto) {
-    const result = await this.usersService.createUser(dto);
-    return {
-      msg: 'User successfully registered',
-    };
+  @UseGuards(AccessTokenGuard)
+  @Get()
+  getAllUsers() {
+    return this.usersService.getAll();
   }
 }

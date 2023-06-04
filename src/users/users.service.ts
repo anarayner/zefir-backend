@@ -1,24 +1,37 @@
-import { Injectable, NotAcceptableException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { User } from './model/users.model';
-import { CreateUserDto } from './model/user.dto';
-import * as bcrypt from 'bcrypt';
+import { User, UserDocument } from './model/users.model';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async createUser(dto: CreateUserDto) {
-    const candidate = await this.userModel.findOne({ email: dto.email });
-    if (candidate) {
-      throw new NotAcceptableException('User with this email already exist');
-    }
+  async create(createUserDto: CreateUserDto): Promise<UserDocument> {
+    const createdUser = new this.userModel(createUserDto);
+    return createdUser.save();
+  }
 
-    const saltOrRounds = 10;
-    const hashedPassword = await bcrypt.hash(dto.password, saltOrRounds);
-    const newUser = new this.userModel({ ...dto, password: hashedPassword });
-    await newUser.save();
-    return newUser;
+  async getAll(): Promise<UserDocument[]> {
+    return this.userModel.find();
+  }
+
+  async findById(id: string): Promise<UserDocument> {
+    return this.userModel.findById(id);
+  }
+
+  async findByEmail(email: string): Promise<UserDocument> {
+    return this.userModel.findOne({ email }).exec();
+  }
+
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserDocument> {
+    return this.userModel
+      .findByIdAndUpdate(id, updateUserDto, { new: true })
+      .exec();
   }
 }
